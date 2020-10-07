@@ -200,6 +200,9 @@ class BehaveRunner(object):
                 and self.command_line_args.junit_directory:
                 self._volumes.extend(['--volume', '{}:/junit:z'.format(
                     self.command_line_args.junit_directory)])
+        # This should be placed better I have added it here just because I know every command will use this
+        # PTRACE capability is required by lsan (leak sanitizer)
+        self._volumes.extend(["--cap-add", "SYS_PTRACE"])
         return self._volumes
 
     @property

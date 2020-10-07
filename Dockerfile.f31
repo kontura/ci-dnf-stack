@@ -41,6 +41,8 @@ RUN set -x && \
     dnf -y copr enable rpmsoftwaremanagement/dnf-nightly; \
     dnf -y install fakeuname;
 
+ENV ASAN_OPTIONS=verify_asan_link_order=0
+
 
 # if not TYPE == copr nor local, disable nightly copr
 RUN set -x && \
@@ -97,7 +99,11 @@ RUN set -x && \
         microdnf \
         # install third party plugins
         dnf-plugin-swidtags \
-        zchunk
+        zchunk \
+        libasan \
+        liblsan \
+        libubsan \
+        compiler-rt
 
 
 # install local RPMs if available
