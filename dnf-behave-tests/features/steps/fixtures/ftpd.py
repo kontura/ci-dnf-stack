@@ -2,6 +2,7 @@
 
 from behave import fixture
 import os
+import logging
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
@@ -37,6 +38,8 @@ class FtpServerContext(ServerContext):
 
             handler = NoLogFtpHandler
             handler.authorizer = authorizer
+
+            logging.basicConfig(filename='/var/log/pyftpd.log', level=logging.INFO)
 
             # with 'localhost' in the address, the FTPServer defaults to IPv6; the
             # ready check would then need to be opening an AF_INET6 socket...

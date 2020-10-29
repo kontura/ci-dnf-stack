@@ -19,6 +19,8 @@ else:
 
 from steps.fixtures.server import ServerContext
 
+from RangeHTTPServer import RangeRequestHandler
+
 
 class AccessRecord(object):
     """Represents an HTTP request processed by a server instance."""
@@ -38,6 +40,7 @@ class NoLogHttpHandler(SimpleHTTPRequestHandler):
         pass
 
 
+# SimpleHTTPRequestHandler doesn't support ranges
 class LoggingHttpHandler(SimpleHTTPRequestHandler):
     def log_request(self, *args, **kwargs):
         if not self.server._conf.get('logging', False):
@@ -52,6 +55,24 @@ class LoggingHttpHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             return
         super(LoggingHttpHandler, self).do_GET()
+
+
+# pip install rangehttpserver
+# this handler supports ranges (good for zchunk debugging)
+class LoggingHttpRangeHandler(RangeRequestHandler):
+    def log_request(self, *args, **kwargs):
+        if not self.server._conf.get('logging', False):
+            return
+        self.server._log.append(AccessRecord(self))
+
+    def do_GET(self):
+        # Respond with the specific status code if configured, otherwise just
+        # process the request as usual.
+        if 'status' in self.server._conf:
+            self.send_response(self.server._conf['status'])
+            self.end_headers()
+            return
+        super(RangeRequestHandler, self).do_GET()
 
 
 class HttpServerContext(ServerContext):
@@ -72,6 +93,7 @@ class HttpServerContext(ServerContext):
         try:
             os.chdir(path)
             httpd = TCPServer(address, LoggingHttpHandler)
+            #httpd = TCPServer(address, LoggingHttpRangeHandler) # This uses the ranged server
             httpd._log = log
             httpd._conf = conf
             httpd.serve_forever()
