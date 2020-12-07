@@ -69,3 +69,28 @@ Given I create file "/a/etc/malicious.file" with
         | baseurl  | http://0.0.0.0:{context.dnf.ports[malicious_server]}/b/c/d/e/f/g/ |
  When I execute dnf with args "--refresh install htop"
  Then file "/etc/malicious.file" does not exist
+
+
+@wip
+@bz1895059
+Scenario: misc.decompress with specified dest does not copy uncopressed file to dest
+Given I copy repository "dnf-ci-thirdparty-updates" for modification
+  And I execute "modifyrepo_c --remove group_gz /{context.dnf.repos[dnf-ci-thirdparty-updates].path}/repodata"
+  And I use repository "dnf-ci-thirdparty-updates" as http
+ When I execute dnf with args "group list"
+ Then the exit code is 0
+  And stdout is
+      """
+      <REPOSYNC>
+      Available Groups:
+         DNF-CI-Testgroup
+      """
+  And file "/var/cache/dnf/dnf-ci-thirdparty-updates-*/repodata/comps.xml" exists
+ When I execute dnf with args "group list -C"
+ Then the exit code is 0
+  And stdout is
+      """
+      <REPOSYNC>
+      Available Groups:
+         DNF-CI-Testgroup
+      """
