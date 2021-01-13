@@ -228,3 +228,41 @@ Given I use repository "simple-base"
   And Transaction is following
       | Action        | Package                       |
       | install       | labirinto-0:1.0-1.fc29.x86_64 |
+
+
+
+@bz1865803
+@wip
+Scenario: I can use fill_sack_from_repos_in_cache api without xml metadata
+Given I use repository "simple-base"
+  And I execute dnf with args "makecache"
+  And I delete file "/var/cache/dnf/simple-base*/repodata/primary.xml.gz" with globs
+  And I delete file "/var/cache/dnf/simple-base*/repodata/filelists.xml.gz" with globs
+  And I create and substitute file "/dnf_api_test.py" with
+      """
+      import dnf
+
+      with dnf.Base() as dnf_base:
+        dnf_base.conf.installroot="{context.dnf.installroot}"
+        dnf_base.conf.config_file_path="{context.dnf.installroot}/etc/dnf/dnf.conf"
+        dnf_base.conf.reposdir="{context.dnf.installroot}/etc/yum.repos.d/"
+        dnf_base.conf.cachedir="{context.dnf.installroot}/var/cache/dnf/"
+
+        dnf_base.read_all_repos()
+
+        dnf_base.fill_sack_from_repos_in_cache()
+
+        q = dnf_base.sack.query().filter(arch__eq='x86_64')
+
+        for pkg in q.run():
+          print(pkg.name)
+
+      """
+ When I execute "python3 {context.dnf.installroot}/dnf_api_test.py"
+ Then stdout is
+      """
+      dedalo-signed
+      labirinto
+      vagare
+      """
+  And the exit code is 0
