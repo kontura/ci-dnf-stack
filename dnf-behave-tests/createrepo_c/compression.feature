@@ -1,8 +1,23 @@
-Feature: Test createrepo_c with zstd compression
+Feature: Test createrepo_c with various compression modes
 
 
+# rpmio zstd
 Scenario: Empty repo with --general-compress-type zstd compression
  When I execute createrepo_c with args "--general-compress-type zstd ." in "/"
+ Then the exit code is 0
+  And repodata "/repodata/" are consistent
+  And repodata in "/repodata/" is
+      | Type         | File                              | Checksum Type | Compression Type |
+      | primary      | ${checksum}-primary.xml.zst       | sha256        | zstd             |
+      | filelists    | ${checksum}-filelists.xml.zst     | sha256        | zstd             |
+      | other        | ${checksum}-other.xml.zst         | sha256        | zstd             |
+      | primary_db   | ${checksum}-primary.sqlite.zst    | sha256        | zstd             |
+      | filelists_db | ${checksum}-filelists.sqlite.zst  | sha256        | zstd             |
+      | other_db     | ${checksum}-other.sqlite.zst      | sha256        | zstd             |
+
+
+Scenario: Empty repo with --general-compress-type zstd compression with a level specified
+ When I execute createrepo_c with args "--general-compress-type 9.zstd ." in "/"
  Then the exit code is 0
   And repodata "/repodata/" are consistent
   And repodata in "/repodata/" is
@@ -79,3 +94,32 @@ Given I copy file "{context.scenario.repos_location}/createrepo_c-ci-packages/x8
       | Name          | Epoch | Version | Release | Architecture |
       | package       | 0     | 0.2.1   | 1.fc29  | x86_64       |
       | package-libs  | 0     | 0.2.1   | 1.fc29  | x86_64       |
+
+
+# rpmio xz
+Scenario: Repo with --general-compress-type gzip2 specified level and parallel compression
+  Given I copy file "{context.scenario.repos_location}/createrepo_c-ci-packages/x86_64/package-0.2.1-1.fc29.x86_64.rpm" to "/"
+  And I copy file "{context.scenario.repos_location}/createrepo_c-ci-packages/x86_64/package-libs-0.2.1-1.fc29.x86_64.rpm" to "/"
+ When I execute createrepo_c with args "--general-compress-type 5T4.xz ." in "/"
+ Then the exit code is 0
+  And repodata "/repodata/" are consistent
+  And repodata in "/repodata/" is
+      | Type         | File                             | Checksum Type | Compression Type |
+      | primary      | ${checksum}-primary.xml.xz       | sha256        | xz               |
+      | filelists    | ${checksum}-filelists.xml.xz     | sha256        | xz               |
+      | other        | ${checksum}-other.xml.xz         | sha256        | xz               |
+      | primary_db   | ${checksum}-primary.sqlite.xz    | sha256        | xz               |
+      | filelists_db | ${checksum}-filelists.sqlite.xz  | sha256        | xz               |
+      | other_db     | ${checksum}-other.sqlite.xz      | sha256        | xz               |
+  And primary in "/repodata/" has only packages
+      | Name          | Epoch | Version | Release | Architecture |
+      | package       | 0     | 0.2.1   | 1.fc29  | x86_64       |
+      | package-libs  | 0     | 0.2.1   | 1.fc29  | x86_64       |
+
+
+# rpmio xz
+Scenario: rpmio does not support parallel de/compression for gzip, createrepo_c fails
+  Given I copy file "{context.scenario.repos_location}/createrepo_c-ci-packages/x86_64/package-0.2.1-1.fc29.x86_64.rpm" to "/"
+  And I copy file "{context.scenario.repos_location}/createrepo_c-ci-packages/x86_64/package-libs-0.2.1-1.fc29.x86_64.rpm" to "/"
+ When I execute createrepo_c with args "--general-compress-type 5T4.gzip ." in "/"
+ Then the exit code is 1
