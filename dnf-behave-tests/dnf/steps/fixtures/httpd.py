@@ -8,6 +8,7 @@ import multiprocessing
 import os
 import ssl
 import sys
+import time
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -43,6 +44,12 @@ class LoggingHttpHandler(SimpleHTTPRequestHandler):
         if not self.server._conf.get('logging', False):
             return
         self.server._log.append(AccessRecord(self))
+
+    def handle(self):
+        data = self.request.recv(1024).strip()
+        self.server._log.append(self.log_date_time_string() + " " + str((self.request.getsockname())) + str(data))
+        time.sleep(5.0)
+
 
     def do_GET(self):
         # Respond with the specific status code if configured, otherwise just

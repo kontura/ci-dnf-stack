@@ -103,7 +103,7 @@ def step_check_http_log(context, quantifier, command):
 @behave.step("HTTP log contains")
 def step_http_log_contains(context):
     expected = context.text.format(context=context).rstrip().split('\n')
-    found = ["%s %s" % (r.command, r.path) for r in context.scenario.httpd.log]
+    found = ["%s" % (r) for r in context.scenario.httpd.log]
 
     for e in expected:
         if e not in found:
@@ -117,9 +117,9 @@ def step_http_log_is(context):
     server_ids = list(context.dnf.ports.keys())
     server_ports = list(context.dnf.ports.values())
     for r in context.scenario.httpd.log:
-        port = r.headers['Host'].split(':')[1]
-        server_id = server_ids[server_ports.index(int(port))]
-        found.append("%s %s %s" % (r.command, server_id, r.path))
+        #port = r.headers['Host'].split(':')[1]
+        #server_id = server_ids[server_ports.index(int(port))]
+        found.append("%s" % (r))
 
     if found == [""]:
         found = []

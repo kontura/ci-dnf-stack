@@ -248,3 +248,45 @@ Given I copy repository "simple-base" for modification
       GET mirror /repodata/primary.xml.gz
       GET mirror /repodata/filelists.xml.gz
       """
+
+
+@wip
+Scenario: fastestmirror checking is parallel
+Given I copy repository "simple-base" for modification
+  And I copy directory "/{context.dnf.repos[simple-base].path}" to "/mirror"
+  And I start http server "mirror" at "{context.dnf.installroot}/mirror"
+  And I use repository "simple-base" as http
+  And I create and substitute file "/mirrorlist" with
+  """
+  http://localhost:{context.dnf.ports[simple-base]}
+  http://localhost:{context.dnf.ports[mirror]}
+  """
+  And I configure repository "simple-base" with
+	  | key        | value                                |
+	  | mirrorlist | {context.dnf.installroot}/mirrorlist |
+  And I start capturing outbound HTTP requests
+  # Since we are logging all `handle()` calls for this test clean up the log first because
+  # each server has one empty request by default (not from dnf) which would confuse the output
+  And I forget any HTTP requests captured so far
+  When I execute dnf with args "makecache --refresh --setopt=fastestmirror=1"
+  Then HTTP log is
+  """
+  We can see in the "found" section of the diff that
+  the first empty requests (those are from fastests mirror)
+  arrive at the same time, the response from both takes 5s
+  then we pick the fastest and download from it.
+  So fastests mirror is run in parallel because otherwise 
+  the first request for data would be delayed by 10s (5+5)
+  but it is in fact delayed only by 5s.
+  """
+
+  # When run the diff looks like this:
+  #    Captured stdout:
+  #    expected                                                   |  found
+  #    We can see in the "found" section of the diff that         |  22/Nov/2021 08:22:20 ('127.0.0.1', 44949)b''
+  #    the first empty requests (those are from fastests mirror)  |  22/Nov/2021 08:22:20 ('127.0.0.1', 36121)b''
+  #    arrive at the same time, the response from both takes 5s   |  22/Nov/2021 08:22:25 ('127.0.0.1', 36121)b'GET /repodata/repomd.xml HTTP/1.1\r\nHost: localhost:36121\r\nUser-Agent: libdnf (Fedora 34; container; Linux.x86_64)\r\nAccept: */*\r\nCache-Control: no-cache\r\nPragma: no-cache'
+  #    then we pick the fastest and download from it.             |  22/Nov/2021 08:22:30 ('127.0.0.1', 44949)b'GET /repodata/repomd.xml HTTP/1.1\r\nHost: localhost:44949\r\nUser-Agent: libdnf (Fedora 34; container; Linux.x86_64)\r\nAccept: */*\r\nCache-Control: no-cache\r\nPragma: no-cache'
+  #    So fastests mirror is run in parallel because otherwise    |  22/Nov/2021 08:22:36 ('127.0.0.1', 36121)b'GET /repodata/repomd.xml HTTP/1.1\r\nHost: localhost:36121\r\nUser-Agent: libdnf (Fedora 34; container; Linux.x86_64)\r\nAccept: */*\r\nCache-Control: no-cache\r\nPragma: no-cache'
+  #    the first request for data would be delayed by 10s (5+5)   |  22/Nov/2021 08:22:41 ('127.0.0.1', 36121)b'GET /repodata/repomd.xml HTTP/1.1\r\nHost: localhost:36121\r\nUser-Agent: libdnf (Fedora 34; container; Linux.x86_64)\r\nAccept: */*\r\nCache-Control: no-cache\r\nPragma: no-cache'
+  #    but it is in fact delayed only by 5s.                      |
