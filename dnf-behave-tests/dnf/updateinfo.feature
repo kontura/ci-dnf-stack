@@ -4,8 +4,8 @@ Feature: Listing available updates using the dnf updateinfo command
 Background:
   Given I use repository "dnf-ci-fedora"
 
-# @dnf5
 # TODO(nsella) different stderr
+@dnf5
 Scenario: Listing available updates
    When I execute dnf with args "install glibc flac"
    Then Transaction is following
