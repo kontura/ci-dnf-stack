@@ -18,6 +18,7 @@ runs:
   using: "composite"
   steps:
     - name: Run Integration Tests
+      if: github.ref == 'refs/heads/master'
       shell: bash
       run: |
         # needed for podman user containers to work
