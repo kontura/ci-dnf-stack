@@ -1,4 +1,3 @@
-@dnf5
 Feature: Test upgrading installonly packages - "installonlypkgs" configuration option
 
 
@@ -13,6 +12,7 @@ Background: Install one version of each test package
         | install       | kernel-core-0:4.18.16-300.fc29.x86_64 |
 
 
+@dnf5
 Scenario: kernel-core is installonly package by default, and installonlyA is not
    When I execute dnf with args "install installonlyA-2.0 kernel-core"
    Then the exit code is 0
@@ -22,6 +22,7 @@ Scenario: kernel-core is installonly package by default, and installonlyA is not
         | install       | kernel-core-0:4.20.6-300.fc29.x86_64  |
 
 
+@dnf5
 Scenario: Add package installonlyA to the installonly packages, kernel-core is installonly by default
    Given I configure dnf with
         | key                          | value         |
@@ -34,6 +35,7 @@ Scenario: Add package installonlyA to the installonly packages, kernel-core is i
         | install       | kernel-core-0:4.20.6-300.fc29.x86_64  |
 
 
+@dnf5
 Scenario: Add package installonlyA to the installonly packages, install multiple versions of installonlyA with a single command
    Given I configure dnf with
         | key                          | value         |
@@ -48,6 +50,7 @@ Scenario: Add package installonlyA to the installonly packages, install multiple
         | install       | kernel-core-0:4.20.6-300.fc29.x86_64  |
 
 
+@dnf5
 Scenario: Clear the list of installonly packages and set the package installonlyA to it
    Given I configure dnf with
         | key                          | value         |
