@@ -10,7 +10,7 @@ components:
 
   - name: libdnf5
     git:
-      src: github:rpm-software-management/libdnf.git
-      branch: origin/dnf-5-devel
+      src: github:rpm-software-management/dnf5.git
+      branch: origin/main
     requires:
       - librepo
