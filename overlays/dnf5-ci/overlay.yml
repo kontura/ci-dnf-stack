@@ -8,7 +8,7 @@ components:
     git:
       src: github:rpm-software-management/librepo.git
 
-  - name: libdnf5
+  - name: dnf5
     git:
       src: github:rpm-software-management/dnf5.git
       branch: origin/main

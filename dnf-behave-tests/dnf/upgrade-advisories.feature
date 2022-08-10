@@ -21,7 +21,7 @@ Scenario: Upgrade packages with security issues
    When I execute dnf with args "downgrade labirinto"
    Then the exit code is 0
    When I execute dnf with args "update labirinto"
-   Then the exit code is 0
+   Then the exit code is 1
     And Transaction is following
         | Action        | Package                                   |
         | upgrade       | labirinto-0:1.56.2-6.fc30.x86_64          |
