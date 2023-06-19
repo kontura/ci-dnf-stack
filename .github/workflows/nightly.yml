@@ -1,9 +1,5 @@
 ---
 name: Nightly builds in Fedora Copr
-on:
-  schedule:
-    - cron:  '0 0 * * *'  # at midnight UTC
-
   # allow to run the workflow manually from GitHub web interface
   workflow_dispatch:
 
