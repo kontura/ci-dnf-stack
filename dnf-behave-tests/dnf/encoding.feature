@@ -1,7 +1,7 @@
+@dnf5
 Feature: Test encoding
 
 
-@dnf5
 Scenario: UTF-8 characters in .repo filename
   Given I configure dnf with
         | key      | value      |
@@ -35,6 +35,7 @@ Scenario: non-UTF-8 characters in .repo filename
     And stderr is empty
 
 
+@xfail
 # @dnf5
 # TODO(nsella) different stdout
 Scenario: non-UTF-8 character in pkgspec
@@ -42,21 +43,22 @@ Scenario: non-UTF-8 character in pkgspec
    When I execute dnf with args "install {context.invalid_utf8_char}ummy"
    Then the exit code is 1
     And stdout is empty
-    And stderr is 
+    And stderr is
         """
+        <REPOSYNC>
         Error: Cannot encode argument '\udcfdummy': 'utf-8' codec can't encode character '\udcfd' in position 0: surrogates not allowed
         """
 
 
-# @dnf5
-# TODO(nsella) Unknown argument "--repofrompath=testrepo," for command "install"
+@xfail
 Scenario: non-UTF-8 character in baseurl
   Given I use repository "miscellaneous"
    When I execute dnf with args "install dummy --repofrompath=testrepo,{context.invalid_utf8_char}"
    Then the exit code is 1
     And stdout is empty
-    And stderr is 
+    And stderr is
         """
+        <REPOSYNC>
         Error: Cannot encode argument '--repofrompath=testrepo,\udcfd': 'utf-8' codec can't encode character '\udcfd' in position 24: surrogates not allowed
         """
 
