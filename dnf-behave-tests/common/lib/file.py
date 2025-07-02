@@ -96,7 +96,7 @@ def decompress_file_by_extension(src):
     elif src.endswith(".zck"):
         return subprocess.run(["unzck", "--stdout", src], capture_output=True).stdout
 
-    return None
+    return open(src, "rb").read()
 
 
 def get_compression_suffix(type_str):
