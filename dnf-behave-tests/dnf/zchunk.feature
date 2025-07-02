@@ -143,3 +143,47 @@ Given I copy repository "simple-base" for modification
   And exactly 2 HTTP GET requests should match:
       | path                      |
       | /repodata/primary.xml.zck |
+
+  Scenario: using mirror wiht ranges support and zchunk
+Given I copy repository "dnf-ci-fedora" for modification
+  And I generate repodata for repository "dnf-ci-fedora" with extra arguments "--zck"
+  And I create and substitute file "/{context.dnf.tempdir}/lighttpd.conf" with
+      """
+      server.document-root = "{context.dnf.repos[dnf-ci-fedora].path}"
+      server.port = 8080
+
+      server.modules += ( "mod_accesslog" )
+      server.errorlog = "/{context.dnf.tempdir}/lighttpd_error.log"
+      accesslog.filename = "/{context.dnf.tempdir}/lighttpd_access.log"
+      accesslog.format = "%r Status code: %>s Sent: %b \"%{{Referer}}i\" --- Ranges: %{{Range}}i"
+      """
+  And I execute "lighttpd -f /{context.dnf.tempdir}/lighttpd.conf"
+  And I configure dnf with
+      | key    | value |
+      | zchunk | True |
+  And I use repository "dnf-ci-fedora" with configuration
+      | key     | value                  |
+      | baseurl | http://localhost:8080/ |
+  And I successfully execute dnf with args "install wget"
+  # Update the metadata with a small update (just one package)
+  And I copy file "{context.dnf.fixturesdir}/repos/simple-base/x86_64/labirinto-1.0-1.fc29.x86_64.rpm" to "/{context.dnf.repos[dnf-ci-fedora].path}/x86_64/"
+  And I generate repodata for repository "dnf-ci-fedora" with extra arguments "--zck"
+  # This wait seems to be needed for lighttpd to notice the files have changed
+  And I execute "sleep 5s"
+ When I execute dnf with args "install labirinto --refresh"
+ Then the exit code is 0
+  And Transaction is following
+      | Action        | Package                       |
+      | install       | labirinto-0:1.0-1.fc29.x86_64 |
+  And I execute "pkill lighttpd"
+  And file "/{context.dnf.tempdir}/lighttpd_access.log" contents is
+      """
+      GET /repodata/repomd.xml HTTP/1.1 Status code: 200 Sent: 3020 "-" --- Ranges: -
+      GET /repodata/primary.xml.zck HTTP/1.1 Status code: 206 Sent: 882 "-" --- Ranges: bytes=0-881
+      GET /repodata/primary.xml.zck HTTP/1.1 Status code: 206 Sent: 73853 "-" --- Ranges: bytes=882-74734
+      GET /x86_64/wget-1.19.5-5.fc29.x86_64.rpm HTTP/1.1 Status code: 200 Sent: 7226 "-" --- Ranges: -
+      GET /repodata/repomd.xml HTTP/1.1 Status code: 200 Sent: 3020 "-" --- Ranges: -
+      GET /repodata/primary.xml.zck HTTP/1.1 Status code: 206 Sent: 902 "-" --- Ranges: bytes=0-901
+      GET /repodata/primary.xml.zck HTTP/1.1 Status code: 206 Sent: 856 "-" --- Ranges: bytes=902-1020,57128-57646
+      GET /x86_64/labirinto-1.0-1.fc29.x86_64.rpm HTTP/1.1 Status code: 200 Sent: 6186 "-" --- Ranges: -
+      """
