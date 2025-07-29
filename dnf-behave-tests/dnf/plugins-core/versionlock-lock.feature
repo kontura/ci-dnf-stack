@@ -299,3 +299,23 @@ Scenario: The packages with minorbump part of release are correctly locked
    When I execute dnf with args "upgrade minorbump"
    Then the exit code is 0
     And Transaction is empty
+
+
+Scenario: Locked kernel is not removed by upgrade
+  Given I use repository "installonly"
+    And I configure dnf with
+        | key               | value     |
+        | installonly_limit | 2         |
+    And I successfully execute dnf with args "install kernel-4.18.16 kernel-4.19.15"
+   When I execute dnf with args "versionlock lock kernel"
+   When I execute dnf with args "versionlock list"
+   Then stdout matches line by line
+    """
+    <REPOSYNC>
+    wget-0:1.19.5-5.fc29.\*
+    kernel-0:4.18.16-300.fc29.\*
+    kernel-0:4.19.15-300.fc29.\*
+    """
+   When I execute dnf with args "upgrade"
+   Then the exit code is 0
+    And Transaction is empty
