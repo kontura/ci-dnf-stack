@@ -1,8 +1,6 @@
 ---
 name: Build DNF5 containers on quay.io
 on:
-  schedule:
-    - cron: '0 4 * * *' # at 4am UTC, 2 hours after nightlies are built
   workflow_dispatch:
 
 
